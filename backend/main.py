@@ -57,6 +57,8 @@ DB_PATH = Path(os.getenv("WEATHER_DB_PATH", str(BACKEND_DIR / "weather_logs.db")
 CACHE_SECONDS = int(os.getenv("KMA_CACHE_SECONDS", "600"))
 REQUEST_TIMEOUT = 8  # seconds
 KST = ZoneInfo("Asia/Seoul")
+SOURCE_NAME = "Korea Meteorological Administration (KMA)"
+MOCK_SOURCE_NAME = "Mock (demo data)"
 
 PTY_LABELS = {0: "강수 없음", 1: "비", 2: "비/눈", 3: "눈", 5: "빗방울", 6: "빗방울/눈날림", 7: "눈날림"}
 SKY_LABELS = {1: "맑음", 3: "구름많음", 4: "흐림"}
@@ -66,6 +68,7 @@ agent_logs: Deque[Dict] = deque(maxlen=100)  # AI 에이전트 로그 (인메모
 
 class WeatherResponse(BaseModel):
     source: str                      # "kma" | "mock"
+    source_name: str                 # 화면/로그에 표시할 데이터 출처
     location: str
     temperature: float               # ℃ (T1H)
     condition: str                   # 맑음 / 구름많음 / 흐림 / 비 / 눈 ...
@@ -274,14 +277,14 @@ def collect_weather(force: bool = False) -> WeatherResponse:
         timestamp = now_kst().strftime("%Y-%m-%d %H:%M:%S")
         try:
             data = fetch_kma_current()
-            weather = WeatherResponse(source="kma", location=LOCATION_NAME, timestamp=timestamp, **data)
+            weather = WeatherResponse(source="kma", source_name=SOURCE_NAME, location=LOCATION_NAME, timestamp=timestamp, **data)
             row_id = insert_weather_log(weather)
-            add_log("INFO", f"기상청 수신 {weather.temperature:.1f}℃ / {weather.condition} → weather_logs #{row_id}")
+            add_log("INFO", f"[{SOURCE_NAME}] 초단기실황 수신 {weather.temperature:.1f}℃ / {weather.condition} → weather_logs #{row_id}")
             _cache.update(weather=weather, at=time.monotonic())
         except Exception as exc:  # 네트워크/키/파싱 오류여도 대시보드는 계속 동작
-            weather = WeatherResponse(source="mock", location=LOCATION_NAME, timestamp=timestamp,
+            weather = WeatherResponse(source="mock", source_name=MOCK_SOURCE_NAME, location=LOCATION_NAME, timestamp=timestamp,
                                       error=str(exc), **mock_current())
-            add_log("WARN", f"실데이터 실패 → mock 사용 (DB 미저장): {exc}")
+            add_log("WARN", f"[{SOURCE_NAME}] 호출 실패 → mock 사용 (DB 미저장): {exc}")
         return weather
 
 
@@ -295,7 +298,7 @@ async def _collector_loop() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    add_log("INFO", f"weather_logs DB 준비: {DB_PATH.name} (nx={KMA_NX}, ny={KMA_NY})")
+    add_log("INFO", f"weather_logs DB 준비: {DB_PATH.name} · 데이터 소스 {SOURCE_NAME} (nx={KMA_NX}, ny={KMA_NY})")
     task = asyncio.create_task(_collector_loop())
     try:
         yield
@@ -344,8 +347,8 @@ def api_logs():
 def api_sync():
     """[수동 제어] 캐시를 무시하고 기상청에서 즉시 재조회·적재."""
     weather = collect_weather(force=True)
-    add_log("SYNC", f"수동 동기화 완료 ({weather.source}, {weather.temperature:.1f}℃, {weather.condition})")
-    return {"synced": weather.source == "kma", "source": weather.source,
+    add_log("SYNC", f"수동 동기화 완료 ({weather.source_name}, {weather.temperature:.1f}℃, {weather.condition})")
+    return {"synced": weather.source == "kma", "source": weather.source, "source_name": weather.source_name,
             "temperature": weather.temperature, "condition": weather.condition, "error": weather.error}
 
 
@@ -360,6 +363,7 @@ def api_report():
         conditions = sorted({r["condition"] for r in rows})
         report = "\n".join([
             f"[myAISky 리포트] {LOCATION_NAME} · {now_kst().strftime('%Y-%m-%d')}",
+            f"- 데이터 소스: {SOURCE_NAME}",
             f"- 기록 수: {len(temps)} (weather_logs)",
             f"- 최고 기온: {max(temps):.1f}℃",
             f"- 최저 기온: {min(temps):.1f}℃",

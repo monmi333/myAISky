@@ -30,7 +30,7 @@ function renderWeather(w) {
   $("h-cond").textContent = w.condition;
   $("h-obs").textContent = w.observed_at;
   $("h-ts").textContent = w.timestamp.slice(11, 16);
-  $("h-src").textContent = w.source === "kma" ? "기상청 실데이터" : "시연용 mock";
+  $("h-src").textContent = w.source_name;
   if (prev !== $("h-temp").textContent) {
     hero.classList.remove("updated"); void hero.offsetWidth; hero.classList.add("updated");
   }
@@ -40,11 +40,11 @@ function renderWeather(w) {
 
   const badge = $("badge");
   badge.className = "badge " + (w.source === "kma" ? "live" : "mock");
-  $("badge-text").textContent = w.source === "kma" ? "기상청 실시간 연동" : "mock 데이터 (API 실패)";
+  $("badge-text").textContent = w.source === "kma" ? "Live · KMA" : "mock 데이터 (KMA 호출 실패)";
 
   $("a-summary").textContent = w.source === "kma"
-    ? `${w.location} 현재 ${w.temperature.toFixed(1)}℃, ${w.condition}. 기상청 초단기실황(${w.observed_at}) 기준이며 weather_logs에 저장됩니다.`
-    : `기상청 호출 실패로 mock 데이터를 표시 중입니다 (DB 미저장). 사유: ${w.error || "알 수 없음"}`;
+    ? `${w.location} 현재 ${w.temperature.toFixed(1)}℃, ${w.condition}. ${w.source_name} 초단기실황(${w.observed_at}) 기준이며 weather_logs에 저장됩니다.`
+    : `Korea Meteorological Administration (KMA) 호출 실패로 mock 데이터를 표시 중입니다 (DB 미저장). 사유: ${w.error || "알 수 없음"}`;
 }
 
 function renderTrend(points) {
