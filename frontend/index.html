@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>myAISky · AI Weather & Agent Monitoring</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>myAISky</h1>
+      <p class="subtitle">AI Weather &amp; Agent Monitoring Dashboard</p>
+    </div>
+    <div class="badge" id="badge"><span class="dot"></span><span id="badge-text">연결 중...</span></div>
+  </header>
+
+  <section class="hero" id="hero" data-cond="clear">
+    <div class="hero-main">
+      <div class="hero-icon" id="h-icon" aria-hidden="true">⛅</div>
+      <div>
+        <div class="hero-loc" id="h-loc">-</div>
+        <div class="hero-temp"><span id="h-temp">--</span><span class="unit">℃</span></div>
+        <div class="hero-cond" id="h-cond">불러오는 중...</div>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <div><span class="k">관측 기준</span><span class="v" id="h-obs">-</span></div>
+      <div><span class="k">조회 시각</span><span class="v" id="h-ts">-</span></div>
+      <div><span class="k">데이터</span><span class="v" id="h-src">-</span></div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="card"><div class="label">습도</div><div class="value" id="s-hum">--%</div><div class="hint">REH</div></div>
+    <div class="card"><div class="label">풍속</div><div class="value" id="s-wind">-- m/s</div><div class="hint">WSD</div></div>
+    <div class="card"><div class="label">오늘 최고 / 최저</div><div class="value" id="s-range">--</div><div class="hint">weather_logs 기준</div></div>
+    <div class="card"><div class="label">저장된 기록</div><div class="value" id="s-count">--</div><div class="hint">최근 24건 표시</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="card analysis">
+      <h2 class="panel-title">실시간 기상 데이터 분석 · 온도 트렌드</h2>
+      <p id="a-summary">데이터를 불러오는 중입니다...</p>
+      <div id="trend"><div class="trend-empty">데이터가 쌓이면 트렌드가 표시됩니다.</div></div>
+    </div>
+
+    <div class="agent">
+      <h2 class="panel-title">AI 에이전트 실시간 로그</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <section class="card table-card">
+    <h2 class="panel-title">weather_logs · 최근 저장 기록</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>시각</th><th>기온</th><th>상태</th><th>습도</th><th>풍속</th></tr></thead>
+        <tbody id="db-rows"><tr><td colspan="6" class="empty">기록이 없습니다.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="control">
+    <h2 class="panel-title">Manual Control Panel</h2>
+    <div class="buttons">
+      <button id="btn-sync">데이터 동기화</button>
+      <button id="btn-report" class="secondary">리포트 생성</button>
+    </div>
+    <pre id="report">리포트는 여기에 표시됩니다.</pre>
+  </section>
+
+  <footer>myAISky · FastAPI + 기상청 초단기실황 · SQLite weather_logs</footer>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
